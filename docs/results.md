@@ -44,7 +44,7 @@ Testing parameters - batchsize = 64, data size = 8songs divided into approx 1000
 | 16             | 2m43.215s    | 2m50.652s    | 2m50.806s   | 3m13.467s   |
 
 
-!['Speed up test results for Wavenet Training](imgs/speed_plot_wavenet_aws.png)
+!['Speed up test results for Wavenet Training](images/speed_plot_wavenet_aws.png)
 
 ## Results
 From the results above we can see that there is a general trend of a speed up but that it is not linear and appears to be bounded around 2minutes and 50 seconds. What appears to be happening here is a case of `Amdahl's law` where the speed up is limited by the proportion of code which is parallelizable hence any further number of cores above this limit adds no value. This indicates strongly that the model training itself is not being correctly parallelized by the Elephas extension as there should be a relatively small amount of sequential overhead in an idealized version of this process, mostly I/O based in communicating gradient updates. What we suspect is happening therefore is that if the number of nodes is too small it doesn't load (one hot encode) the data quickly enough to supply data to the Elephas training cycle which gets held up. Once there is enough compute to complete the data processing prior to the model fitting time, the process doesn't speed up - hence it is not parallelizing correctly. This does however demonstrate that there are some limitations in having the one-hot encoding in the model training step rather than the preprocessing step as it then takes around 4 cores in asynchronous mode (128 partitions) or 16 cores in synchronous mode.
