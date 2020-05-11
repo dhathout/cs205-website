@@ -3,7 +3,7 @@ theme: minima
 header_pages:
   - index.md
   - model.md
-  - tuning.md
+  - pipeline.md
   - performance.md
   - visualizations.md
   - presentation.md
