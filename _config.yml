@@ -3,7 +3,7 @@ plugins:
 relative_links:
   enabled: true
   collections: true
-include:
+header_pages:
   - README.md
   - index.md
   - model.html
@@ -11,4 +11,4 @@ include:
   - results.md
   - Discussion.md
 
-theme: jekyll-theme-dinky
+theme: minima
