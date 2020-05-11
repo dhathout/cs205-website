@@ -1,5 +1,5 @@
 title: Deep Song Generation
-theme: jekyll-theme-slate
+theme: minima
 header_pages:
   - index.md
   - pipeline.md
