@@ -6,7 +6,7 @@ relative_links:
 header_pages:
   - README.md
   - index.md
-  - model.html
+  - model.md
   - pipeline.md
   - results.md
   - Discussion.md
