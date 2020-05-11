@@ -3,7 +3,7 @@ title: How-to
 ---
 ### How it Works
 
-The approach can be split into foru major segments:
+The approach can be split into four major segments:
 1. Webscraping songs from FMA (in mp3 format)
 2. Converting and preprocessing songs into a clean binary format (an array on values)
 3. Utilizing the custom data generator to train the Neural Network (Wavenet model) in a memory efficent manner
