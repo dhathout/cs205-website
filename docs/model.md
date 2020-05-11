@@ -1,7 +1,7 @@
 ---
-title: Implementation
+title: Model
 ---
-Here we describe the infrastructure, technologies, and platforms we used
+We describe the infrastructure, technologies, and platforms we used
 throughout the entire pipeline.
 
 ## Data Pipeline
