@@ -1,5 +1,5 @@
 title: Deep Song Generation
-theme: hyde
+remote_theme: hyde
 header_pages:
   - index.md
   - model.md
