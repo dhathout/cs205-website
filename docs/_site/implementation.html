@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" href="/images/fav.png"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Implementation | Crowd Dynamics at Harvard University</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Implementation" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Repository for CS 205 Final Project, Spring 2019" />
+<meta property="og:description" content="Repository for CS 205 Final Project, Spring 2019" />
+<link rel="canonical" href="http://localhost:4000/implementation.html" />
+<meta property="og:url" content="http://localhost:4000/implementation.html" />
+<meta property="og:site_name" content="Crowd Dynamics at Harvard University" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/implementation.html","headline":"Implementation","description":"Repository for CS 205 Final Project, Spring 2019","@type":"WebPage","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Crowd Dynamics at Harvard University" /></head><body><header class="site-header" style="display: flex">
+        <img class="h_logo" src="/images/seas.png" >
+    <div class="wrapper"><a class="site-title" rel="author" href="/">Crowd Dynamics at Harvard University</a><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewBox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+              </svg>
+            </span>
+          </label>
+  
+          <div class="trigger"><a class="page-link" href="/">Overview</a><a class="page-link" href="/implementation.html">Implementation</a><a class="page-link" href="/tuning.html">Tuning</a><a class="page-link" href="/performance.html">Performance</a><a class="page-link" href="/visualizations.html">Visualizations</a><a class="page-link" href="/presentation.html">Presentation</a></div>
+        </nav></div>
+        <img class="h_logo" src="/images/iacs.png" >
+  </header>
+  <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Implementation</h1>
+  </header>
+
+  <div class="post-content">
+    <p>Here we describe the infrastructure, technologies, and platforms we used
+throughout the entire pipeline.</p>
+
+<h2 id="data-pipeline">Data Pipeline</h2>
+
+<p>We mainly use distributed Tensorflow for the machine learning inference and
+Spark for the following data analytics.
+Our pipeline looks like this:</p>
+
+<p><img src="/images/pipeline.png" alt="implementation" /></p>
+
+<p>Our project can be split up into multiple stages.</p>
+
+<h3 id="video-processing-object-detection">Video Processing Object Detection</h3>
+
+<p>First, we read in the historical video records of the Science Center Plaza and turn our collected video into 1 hour chunks.
+To do much of this processing, we use <code class="highlighter-rouge">ffmpeg</code>. In order to mitigate overhead, we store month of data as compressed video, which reduces the amount we have to store to 23.8 GM instead of 6 TB.</p>
+
+<p>Store month of data as compressed video (23.8 GB instead of 6 TB)</p>
+
+<h3 id="object-detection">Object Detection</h3>
+
+<p>Once the video has been read in from the stream, we use a TensorFlow implementation of an object detection model to generate 
+bounding boxes. In particular, we use a deep convolutional neural net using the Faster-RCNN architecture [1]
+for detecting people, bicycles, cars, and trucks. We used a pretrained model that was trained on Microsoft COCO [2], 
+a dataset of common objects in context. The dataset is composed of a large number of images with a total of 91 unique
+objects with labels; however, we only care detecting pedestrians, so we only focus on detecting one class (person).</p>
+
+<p>When feeding frames into the model, we initially considered processing video into tons of images, and then distributing those 
+images, but we noted that processing uncompressed images is too slow, as EC2 instances are bottlenecked by network bandwidth. 
+Therefore, in order to mitigate overhead, we instead distribute entire compressed videos to GPUs and have decompression into 
+individual frames on the same node that passes them through the model.</p>
+
+<p>For each frame, we end up generating a timestamp, bounding boxes, and scores for confidence of detection in each of those 
+bounding boxes. We save this output data to Spark dataframes, where each row contains the output generated from one frame, which are then used when we compute our analytics.</p>
+
+<p>We run this stage of our computation on a AWS EC2 instance with GPU, in particular a p3.8xlarge instance, which has 4 GPUs
+with a Deep Learning AMI (Ubuntu) Version 22.0.</p>
+
+<p>The output from the machine learning model looks something like this as a dataframe.
+Everything else needs to be calculated, windowed, and processed using spark.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>+-------------------+--------------------+--------------------+
+|              frame|              bboxes|              scores|
++-------------------+--------------------+--------------------+
+|1970-01-01 00:00:00|[0.59336024522781...|[0.93980032205581...|
+|1970-01-01 00:00:01|[0.62502855062484...|[0.89926099777221...|
+|1970-01-01 00:00:02|[0.72911220788955...|[0.98777532577514...|
+|1970-01-01 00:00:03|[0.78701549768447...|[0.97126829624176...|
+|1970-01-01 00:00:04|[0.48519986867904...|[0.93738293647766...|
+|1970-01-01 00:00:05|[0.67814970016479...|[0.97286134958267...|
+|1970-01-01 00:00:06|[0.57940828800201...|[0.98793494701385...|
+|1970-01-01 00:00:07|[0.71229845285415...|[0.98705601692199...|
+|1970-01-01 00:00:08|[0.34067243337631...|[0.77425789833068...|
+|1970-01-01 00:00:09|[0.78984218835830...|[0.97743964195251...|
+|1970-01-01 00:00:10|[0.39440840482711...|[0.92999798059463...|
+|1970-01-01 00:00:11|[0.60313117504119...|[0.93863993883132...|
+|1970-01-01 00:00:12|[0.82778960466384...|[0.91649687290191...|
+|1970-01-01 00:00:13|[0.51006656885147...|[0.97323024272918...|
+|1970-01-01 00:00:14|[0.56186217069625...|[0.89469927549362...|
+|1970-01-01 00:00:15|[0.67285186052322...|[0.97309362888336...|
+|1970-01-01 00:00:16|[0.35979881882667...|[0.84619909524917...|
+|1970-01-01 00:00:17|[0.39222764968872...|[0.71783727407455...|
+|1970-01-01 00:00:18|[0.47849225997924...|[0.92085105180740...|
+|1970-01-01 00:00:19|[0.51487535238265...|[0.81251215934753...|
++-------------------+--------------------+--------------------+
+only showing top 20 rows
+</code></pre></div></div>
+
+<p>with only three columns for simplicity.
+The corresponding schema is</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root
+ |-- frame: timestamp <span class="o">(</span>nullable <span class="o">=</span> <span class="nb">false</span><span class="o">)</span>
+ |-- bboxes: array <span class="o">(</span>nullable <span class="o">=</span> <span class="nb">true</span><span class="o">)</span>
+ |    |-- element: double <span class="o">(</span>containsNull <span class="o">=</span> <span class="nb">true</span><span class="o">)</span>
+ |-- scores: array <span class="o">(</span>nullable <span class="o">=</span> <span class="nb">true</span><span class="o">)</span>
+ |    |-- element: double <span class="o">(</span>containsNull <span class="o">=</span> <span class="nb">true</span><span class="o">)</span>
+</code></pre></div></div>
+
+<p>The Spark Dataframe is now used for our metrics.</p>
+
+<h3 id="analytics">Analytics</h3>
+
+<p>To perform our analytics, we apply user defined function transformations to the columns of the Spark dataframes from the 
+object detection step. These analytics include locations of people, number of people, group size, and velocities. After 
+computing analytics on the historical data, we also aggregate over short windows of time (ex. 10 minutes). After all analytics
+computations have been completed, we write our results to a Pandas dataframe to be used in the visualization code.</p>
+
+<p>We run this stage of our computation on a AWS EMR cluster with Spark. In particular, we use emr-5.23.0, which has
+Spark 2.4.0 on Hadoop 2.8.5 YARN with Ganglia 3.7.2 and Zeppelin 0.8.1, and have 8 m4.xlarge instances in our cluster.</p>
+
+<p>We now provide some more details on how our analytics transformation were done. Locations of people and number of people are both fairly straightforward, to calculate, with location computed by finding the centers of the input bounding boxes and
+number of people found by just counting the number of bounding boxes. Group size and velocity computations are a bit more involved, however, and are described in detail below.</p>
+
+<h4 id="group-size">Group Size</h4>
+
+<p>To compute group size, we must determine how far apart the detected people are from each other within the same frame.
+In order to do this, we use a depth-first-search. In particular, we construct a graph where the nodes are the centers of the detected people, and the edges are the distances between the centers.
+We connect 2 nodes with an undirected edge <em>iff</em> the Euclidean distance between the centers is less than the threshold of 0.1, where the coordinates of the two dimensinos are given as proportinos of the overall width and length of the screen (i.e. values are in [0, 1]).</p>
+
+<p>After constructing the graph, we identify the connected components through depth-first-search, where a component contains all nodes reachable from each other. The size of each component is the group size. The number of groups is the number of distinct connected components.</p>
+
+<h4 id="velocity">Velocity</h4>
+
+<p>In order to compute the average velocity in each frame, we must consider the detected objects in the next frame.
+For person A in frame <script type="math/tex">i</script>, we need to identify the location of person A in frame <script type="math/tex">i+1</script>, and then approximate the velocity in frame i by dividing the distance traveled (between person A’s centers) by the time, which is the inverse of the fps (frames per second).</p>
+
+<p>So, first, we must link people between frames.
+Since people are constantly entering and leaving the frame, the number of objects per frame (<script type="math/tex">n_i</script>) may not be consistent between successive frames.
+Therefore, for each frame, we can compute at most <script type="math/tex">\text{min}(n_i, n_{i+1})</script> velocities.
+We compute pairwise distances between all objects in different frames, sort the pairs in ascending order of distance, and then greedily label each unassigned object in frame <script type="math/tex">i</script> to the closest unassigned object in frame <script type="math/tex">i+1</script>.
+We account for the edge case of a person leaving one end of the frame and another person entering on the opposite side of the next frame by only linking people whose distance is within a predefined threshold of 30% of the frame width or length.
+In particular, we compute the Euclidean distance between the centers (where the two dimensions of the centers are in <script type="math/tex">[0, 1]</script> as proportions of the frame dimension length), and then do not link objects if the distance exceeds <script type="math/tex">0.3</script>.</p>
+
+<p>Here is an example image, where the first frame (A) has 6 detected people, and the second frame (B) has 3 detected people. The green lines denote the link, and the velocity is computed as the length of the green line times the fps.</p>
+
+<p align="center"> 
+<img src="images/linking.png" />
+</p>
+
+<h3 id="visualizations">Visualizations</h3>
+
+<p>We take the augmented Spark dataframe from our analytics step and convert it back into a Pandas dataframe for
+visualization. 
+The pandas dataframe looks something like this:</p>
+
+<p align="center"> 
+<img src="images/processed_dataframe.png" />
+</p>
+
+<p>With this dataframe, we create visualizations using the Bokeh library for interactive graphs,
+and CV2 with matplotlib to draw the bounding boxes on the original video. See the <a href="visualizations.html">visualizations</a> tab for various interactive plots!</p>
+
+<h2 id="citations">Citations</h2>
+
+<ol>
+  <li>
+    <p>Ren, Shaoqing et al. “Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks.” IEEE Transactions on Pattern Analysis and Machine Intelligence 39.6 (2017): 1137–1149. Crossref. Web.</p>
+  </li>
+  <li>
+    <p>Lin, Tsung-Yi et al. “Microsoft COCO: Common Objects in Context.” Lecture Notes in Computer Science (2014): 740–755. Crossref. Web.</p>
+  </li>
+</ol>
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+
+  </div>
+
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Crowd Dynamics at Harvard University</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Crowd Dynamics at Harvard University</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Repository for CS 205 Final Project, Spring 2019</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

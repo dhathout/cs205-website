@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" href="/images/fav.png"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Performance | Crowd Dynamics at Harvard University</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Performance" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Repository for CS 205 Final Project, Spring 2019" />
+<meta property="og:description" content="Repository for CS 205 Final Project, Spring 2019" />
+<link rel="canonical" href="http://localhost:4000/performance.html" />
+<meta property="og:url" content="http://localhost:4000/performance.html" />
+<meta property="og:site_name" content="Crowd Dynamics at Harvard University" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/performance.html","headline":"Performance","description":"Repository for CS 205 Final Project, Spring 2019","@type":"WebPage","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Crowd Dynamics at Harvard University" /></head><body><header class="site-header" style="display: flex">
+        <img class="h_logo" src="/images/seas.png" >
+    <div class="wrapper"><a class="site-title" rel="author" href="/">Crowd Dynamics at Harvard University</a><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewBox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+              </svg>
+            </span>
+          </label>
+  
+          <div class="trigger"><a class="page-link" href="/">Overview</a><a class="page-link" href="/implementation.html">Implementation</a><a class="page-link" href="/tuning.html">Tuning</a><a class="page-link" href="/performance.html">Performance</a><a class="page-link" href="/visualizations.html">Visualizations</a><a class="page-link" href="/presentation.html">Presentation</a></div>
+        </nav></div>
+        <img class="h_logo" src="/images/iacs.png" >
+  </header>
+  <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Performance</h1>
+  </header>
+
+  <div class="post-content">
+    <h2 id="process">Process</h2>
+
+<p>To measure scaling we used an AWS EMR cluster of 8 m4.xlarge workers (which have 4 cores each) to compute historical analytics on the detected objects that we identified from 150 GB of video.</p>
+
+<p><img src="/images/8nodes.png" alt="8nodes" /></p>
+
+<!-- ## Theoretical Speedup
+
+We use Gustafson's Law to calculate speedup: 
+
+$$S=p+(1-p)s$$
+
+Running 8 p2.xlarge instances as worker nodes gives $$p=8$$. We can then calculate the speedup for the two steps of our calculations.
+
+<ol>
+    <li>Create bounding boxes with NNs (fully parallelizable, store boxes in s3)</li>
+    $$S = 8 + (-7)0 = 8$$
+    <li>Compute analytics from bounding boxes in Spark: 8 workers, 2 cores per worker, 2 threads per core</li>
+    $$S=32$$
+
+</ol>
+
+TODO: Talk about performance -->
+
+<h2 id="strong-scaling">Strong Scaling</h2>
+
+<p>We evaluate strong scaling (fixed problem size) for our analytics/aggregation stage for historical data processing. We do this 
+by running our analytics/aggregation code on of 100 hours of bounding boxes (Spark dataframes output from the object detection 
+stage) with aggregation into 10-minute windows. We vary the computation by varying the number of executors and executors per 
+core.</p>
+
+<p>The following is a plot of our speedup results for various numbers of executors and executors per core on Spark, as well as a table containing the same information.</p>
+
+<p><img src="/images/strong.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center"># Executors (Row) / Cores (Col)</th>
+      <th style="text-align: center">1</th>
+      <th style="text-align: center">2</th>
+      <th style="text-align: center">3</th>
+      <th style="text-align: center">4</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">130.6036292552948</td>
+      <td style="text-align: center">151.8580044269562</td>
+      <td style="text-align: center">164.2707266330719</td>
+      <td style="text-align: center">149.00747709274293</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">142.3604470252991</td>
+      <td style="text-align: center">143.8039128780365</td>
+      <td style="text-align: center">153.2352751255035</td>
+      <td style="text-align: center">159.88366103172302</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">137.6322629451752</td>
+      <td style="text-align: center">147.9056767940521</td>
+      <td style="text-align: center">148.7119328022003</td>
+      <td style="text-align: center">144.19866309165954</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">134.2263833522797</td>
+      <td style="text-align: center">135.0394935131073</td>
+      <td style="text-align: center">124.2541794300079</td>
+      <td style="text-align: center">131.04245553016662</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">143.3751981735230</td>
+      <td style="text-align: center">135.3142168521881</td>
+      <td style="text-align: center">115.2301400184631</td>
+      <td style="text-align: center">117.34413194656372</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">133.5113302230835</td>
+      <td style="text-align: center">115.5624811649323</td>
+      <td style="text-align: center">111.8524597167969</td>
+      <td style="text-align: center">107.45588517189026</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">7</td>
+      <td style="text-align: center">128.5110889911652</td>
+      <td style="text-align: center">106.3509711265564</td>
+      <td style="text-align: center">103.2844680309296</td>
+      <td style="text-align: center">103.79440789222717</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">118.0175147533417</td>
+      <td style="text-align: center">95.38883476257324</td>
+      <td style="text-align: center">98.73593525886535</td>
+      <td style="text-align: center">91.498237657547</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>TODO: Add analysis</p>
+
+<h2 id="weak-scaling">Weak Scaling</h2>
+
+<p>TODO</p>
+
+<h2 id="fixed-computation-scaling">Fixed Computation Scaling</h2>
+
+<p>We evaluate fixed computation scaling for our analytics/aggregation stage for historical data processing. We again do this by running our analytics/aggregation code on various amounts of bounding boxes (Spark dataframes output from the object detection stage) with aggregation into 10-minute windows. In particular, to vary the amount of data that we feed in, we duplicate our 100 hours of data various numbers of time.</p>
+
+<p>The following is a plot of our speedup results for various numbers of executors and executors per core on Spark, as well as a table containing the same information.</p>
+
+<p><img src="/images/strong.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center"># Duplications of data</th>
+      <th style="text-align: center">Runtime (s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">105.96309661865234</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">155.95204782485962</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">189.80698084831238</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">213.94005870819092</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">284.8611829280853</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">361.21924901008606</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">12</td>
+      <td style="text-align: center">515.224663734436</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">16</td>
+      <td style="text-align: center">629.3407850265503</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>TODO: Add analysis</p>
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+
+  </div>
+
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Crowd Dynamics at Harvard University</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Crowd Dynamics at Harvard University</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Repository for CS 205 Final Project, Spring 2019</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
