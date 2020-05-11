@@ -4,7 +4,6 @@ relative_links:
   enabled: true
   collections: true
 header_pages:
-  - README.md
   - index.md
   - model.md
   - pipeline.md
