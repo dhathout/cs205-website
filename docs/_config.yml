@@ -4,6 +4,7 @@ header_pages:
   - index.md
   - model.md
   - pipeline.md
+  - preprocessing.md
   - results.md
   - discussion.md
   - presentation.md
