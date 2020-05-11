@@ -1,7 +1,7 @@
 ---
 title: Discussion
 ---
-Here are some visualizations of what the detections look like.
+Some visualizations of what the detections look like.
 
 ## Plaza Metrics
 
