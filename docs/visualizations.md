@@ -1,5 +1,5 @@
 ---
-title: Visualizations
+title: Discussion
 ---
 Here are some visualizations of what the detections look like.
 
