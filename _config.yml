@@ -6,7 +6,7 @@ relative_links:
 include:
   - README.md
   - index.md
-  - model.md
+  - model.html
   - pipeline.md
   - results.md
   - Discussion.md
