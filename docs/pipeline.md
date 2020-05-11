@@ -1,4 +1,4 @@
 ---
 title: Pipeline
 ---
-a
+![pipeline](/images/pipeline.PNG)
