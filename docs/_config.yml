@@ -4,6 +4,6 @@ header_pages:
   - index.md
   - model.md
   - pipeline.md
-  - performance.md
+  - results.md
   - visualizations.md
   - presentation.md
