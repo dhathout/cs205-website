@@ -9,7 +9,7 @@ This requires a network with 8 stacks of 10 layers (each layer containing three 
 
 Our aim is therefore to speed up the training of the Wavenet model by splitting the gradient descent process. Hence we wish to split the training process out into multiple batches and recombine the results in a cohesive way. There are papers demonstrating the feasibility of this approach (https://research.google/pubs/pub40565/) using methods such as Downpoor SGD and Hogwild. The concept is relatively simple - the model and a data chunk are distributed out to a worker where it trains on that chunk until it has a set of gradients. This is performed concurrently on all workers and then the gradients are all sent back to the master node which than uses a weighted update process to combine the individual gradients. This can either be performed synchronously or asychronously (aka hogwild which interestingly removes read/write locks). 
 
-![An Example of a Downpoor SGD Approach](imgs/downpoorsgd.png)
+![An Example of a Downpoor SGD Approach](images/downpoorsgd.png)
 
 Reference - https://www.semanticscholar.org/paper/Large-Scale-Distributed-Deep-Networks-Dean-Corrado/3127190433230b3dc1abd0680bb58dced4bcd90e
 
