@@ -5,5 +5,10 @@ relative_links:
   collections: true
 include:
   - README.md
+  - index.md
+  - model.md
+  - pipeline.md
+  - results.md
+  - Discussion.md
 
 theme: jekyll-theme-dinky
