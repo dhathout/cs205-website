@@ -2,9 +2,10 @@ title: Deep Song Generation
 theme: minima
 header_pages:
   - index.md
-  - model.md
   - pipeline.md
+  - howto.md
   - preprocessing.md
+  - model.md
   - results.md
   - discussion.md
   - presentation.md
