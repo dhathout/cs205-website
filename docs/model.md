@@ -16,7 +16,7 @@ A Wavenet model can be thought of as a stack of interconnected layers, each node
 
 This then follows all the way up the network until the final layer which outputs a prediction value. Below is a diagram which represents the concept, albeit slightly confusingly. If you look closely you'll see the grey lines in the background which show the true underlying structure of the network. For each input chunk the model outputs the same number of values on the output and hence can be trained as if an autoencoder with the target labels being in the input data.
 
-![Example of the Wavenet Layer System](imgs/wavenet_conv.png)
+![Example of the Wavenet Layer System](images/wavenet_conv.png)
 
 *Reference* - (https://deepmind.com/blog/article/wavenet-generative-model-raw-audio)
 
@@ -37,7 +37,7 @@ These layers exist as part of the Tensorflow Keras pipeline and hence can be inc
 
 The above concept of stacking layers is correctly although over simplified. Each layer actually consists of a pair of layers (with the same number of filters) where one has a sigmoid and the other a tanh activation function (as shown in the diagram below from Deepmin's published paper). This acts much like a gate in an LSTM or other Recurrent Network in that the sigmoid can scale up or down (0->1) the importance of the current input values. The tanh then effectively provides the audio signal (-1 to 1) and the multiplication of the two gives the scaled output.
 
-![Wavenet Gated Unit](imgs/wavenet_gate.png)
+![Wavenet Gated Unit](images/wavenet_gate.png)
 
 *Reference:* https://arxiv.org/pdf/1609.03499.pdf
 
