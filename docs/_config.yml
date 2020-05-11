@@ -2,7 +2,7 @@ title: Crowd Dynamics at Harvard University
 theme: minima
 header_pages:
   - index.md
-  - implementation.md
+  - model.md
   - tuning.md
   - performance.md
   - visualizations.md
