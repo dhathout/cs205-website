@@ -1,4 +1,4 @@
 ---
 title: Pipeline
 ---
-![pipeline](/images/pipeline.PNG)
+![pipeline](/images/pipeline.png)
