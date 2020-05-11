@@ -1,5 +1,5 @@
 ---
-title: Tuning
+title: Pipeline
 ---
 ## Object Detection Model Selection
 
