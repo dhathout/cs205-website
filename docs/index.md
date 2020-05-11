@@ -4,7 +4,7 @@ title: Background
 
 ## Problem
 
-The Science Center plaza is a very popular area, home to food trucks, students,
+Science Center plaza is a very popular area, home to food trucks, students,
 and tourists. The Science Center Plaza also has a live stream video feed 24 
 hours per day, which you can check out
 [here](https://commonspaces.harvard.edu/plaza-webcam).
